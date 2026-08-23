@@ -28,3 +28,10 @@ module "networking" {
 
   enable_vpc_flow_logs = true
 }
+
+module "security" {
+  source = "../../modules/security"
+
+  project_name = var.project_name
+  environment  = var.environment
+}

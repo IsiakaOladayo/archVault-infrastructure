@@ -32,3 +32,18 @@ output "private_db_subnet_ids" {
   description = "ArchVault private database subnet IDs."
   value       = module.networking.private_db_subnet_ids
 }
+
+output "database_kms_key_arn" {
+  description = "KMS key ARN for database encryption."
+  value       = module.security.database_kms_key_arn
+}
+
+output "documents_kms_key_arn" {
+  description = "KMS key ARN for S3 document encryption."
+  value       = module.security.documents_kms_key_arn
+}
+
+output "secrets_kms_key_arn" {
+  description = "KMS key ARN for Secrets Manager encryption."
+  value       = module.security.secrets_kms_key_arn
+}
