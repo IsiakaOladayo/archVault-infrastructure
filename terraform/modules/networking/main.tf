@@ -121,7 +121,7 @@ resource "aws_route" "private_app_internet" {
 }
 
 resource "aws_route_table_association" "private_app" {
-  count = 3
+  count = 2
 
   subnet_id      = aws_subnet.private_app[count.index].id
   route_table_id = aws_route_table.private_app[count.index].id
@@ -214,4 +214,3 @@ resource "aws_flow_log" "this" {
     Name = "${var.project_name}-${var.environment}-vpc-flow-logs"
   }
 }
-

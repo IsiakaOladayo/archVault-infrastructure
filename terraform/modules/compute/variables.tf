@@ -1,99 +1,69 @@
 variable "project_name" {
-  description = "Name of the project."
+  description = "Project name"
   type        = string
 }
 
-
-#Environment
-
 variable "environment" {
-  description = "Deployment environment."
+  description = "Deployment environment"
   type        = string
 }
 
 variable "vpc_id" {
-  description = "ID of the VPC where compute resources will be deployed."
+  description = "VPC ID"
   type        = string
 }
 
 variable "public_subnet_ids" {
-  description = "List of public subnet IDs where the Application Load Balancer will be deployed."
+  description = "Public subnets for the ALB"
   type        = list(string)
 }
 
-variable "application_subnet_ids" {
-  description = "List of private application subnet IDs where EC2 instances will be deployed."
+variable "private_app_subnet_ids" {
+  description = "Private subnets for ECS tasks"
   type        = list(string)
 }
 
-# EC2
-
-
-variable "instance_type" {
-  description = "EC2 instance type for application servers."
+variable "alb_security_group_id" {
+  description = "Security group for the ALB"
   type        = string
-  default     = "t3.micro"
 }
 
-variable "ssh_key_name" {
-  description = "Name of the EC2 key pair used for SSH access. Set to null to disable SSH key configuration."
+variable "ecs_security_group_id" {
+  description = "Security group for ECS tasks"
   type        = string
-  default     = null
 }
 
-#Application
+variable "container_image" {
+  description = "Container image URI"
+  type        = string
+}
 
-
-variable "app_port" {
-  description = "Port on which the application listens."
+variable "container_port" {
+  description = "Application container port"
   type        = number
   default     = 3000
 }
 
-variable "health_check_path" {
-  description = "HTTP path used by the Application Load Balancer to perform health checks."
-  type        = string
-  default     = "/health"
-}
-
-# Auto Scaling
-
-
-variable "min_size" {
-  description = "Minimum number of EC2 instances in the Auto Scaling Group."
+variable "desired_count" {
+  description = "Initial desired ECS task count"
   type        = number
   default     = 2
-
-  validation {
-    condition     = var.min_size >= 1
-    error_message = "min_size must be at least 1."
-  }
 }
 
-variable "desired_capacity" {
-  description = "Desired number of EC2 instances in the Auto Scaling Group."
+variable "min_capacity" {
+  description = "Minimum ECS task count"
   type        = number
   default     = 2
-
-  validation {
-    condition     = var.desired_capacity >= 1
-    error_message = "desired_capacity must be at least 1."
-  }
 }
 
-variable "max_size" {
-  description = "Maximum number of EC2 instances in the Auto Scaling Group."
+variable "max_capacity" {
+  description = "Maximum ECS task count"
   type        = number
-  default     = 6
-
-  validation {
-    condition     = var.max_size >= 1
-    error_message = "max_size must be at least 1."
-  }
+  default     = 20
 }
 
 variable "common_tags" {
-  description = "Common tags applied to all compute resources."
+  description = "Common resource tags"
   type        = map(string)
   default     = {}
 }
