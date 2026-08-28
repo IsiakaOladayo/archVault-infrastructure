@@ -35,3 +35,24 @@ module "security" {
   project_name = var.project_name
   environment  = var.environment
 }
+
+module "compute" {
+  source = "../../modules/compute"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  vpc_id = module.networking.vpc_id
+
+  public_subnet_ids = module.networking.public_subnet_ids
+
+  application_subnet_ids = module.networking.application_subnet_ids
+
+  instance_type     = var.compute_instance_type
+  min_size          = 2
+  desired_capacity  = 2
+  max_size          = 6
+  health_check_path = "/health"
+
+  common_tags = var.common_tags
+}

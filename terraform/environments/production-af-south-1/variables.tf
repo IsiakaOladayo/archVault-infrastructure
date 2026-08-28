@@ -25,3 +25,19 @@ variable "primary_region" {
     error_message = "ArchVault's primary region must be af-south-1."
   }
 }
+
+variable "compute_instance_type" {
+  type        = string
+  description = "EC2 instance type for the application tier."
+  default     = "t3.micro"
+}
+
+variable "common_tags" {
+  description = "Common tags applied to all ArchVault resources."
+  type        = map(string)
+
+  default = {
+    Project   = "ArchVault"
+    ManagedBy = "Terraform"
+  }
+}

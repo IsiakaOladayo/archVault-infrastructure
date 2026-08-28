@@ -1,11 +1,4 @@
 provider "aws" {
+  shared_credentials_files = ["/home/digitalist/.aws/credentials"]
   region = var.primary_region
-
-  default_tags {
-    tags = {
-      Project     = var.project_name
-      Environment = var.environment
-      ManagedBy   = "Terraform"
-    }
-  }
 }
