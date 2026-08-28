@@ -1,5 +1,5 @@
 output "vpc_id" {
-  description = "ID of the VPC"
+  description = "ID of the ArchVault VPC"
   value       = aws_vpc.main.id
 }
 
@@ -9,21 +9,26 @@ output "vpc_cidr" {
 }
 
 output "public_subnet_ids" {
-  description = "IDs of public subnets"
+  description = "IDs of the public subnets"
   value       = aws_subnet.public[*].id
 }
 
 output "private_app_subnet_ids" {
-  description = "IDs of private application subnets"
+  description = "IDs of the private application subnets"
   value       = aws_subnet.private_app[*].id
 }
 
 output "private_db_subnet_ids" {
-  description = "IDs of private database subnets"
+  description = "IDs of the private database subnets"
   value       = aws_subnet.private_db[*].id
 }
 
+output "nat_gateway_ids" {
+  description = "IDs of the NAT Gateways"
+  value       = aws_nat_gateway.main[*].id
+}
+
 output "availability_zones" {
-  description = "Availability Zones used by the VPC"
+  description = "Availability Zones used by the network"
   value       = var.availability_zones
 }

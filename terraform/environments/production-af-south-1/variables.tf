@@ -1,43 +1,56 @@
 variable "project_name" {
-  description = "Name of the ArchVault platform."
+  description = "Name of the project"
   type        = string
-  default     = "archvault"
 }
 
 variable "environment" {
-  description = "Deployment environment."
+  description = "Deployment environment"
   type        = string
-  default     = "production"
-
-  validation {
-    condition     = var.environment == "production"
-    error_message = "Environment must be production."
-  }
 }
 
 variable "primary_region" {
-  description = "Primary AWS Region for ArchVault."
+  description = "Primary AWS region"
   type        = string
-  default     = "af-south-1"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+}
+
+variable "availability_zones" {
+  description = "Availability Zones for the production environment"
+  type        = list(string)
 
   validation {
-    condition     = var.primary_region == "af-south-1"
-    error_message = "ArchVault's primary region must be af-south-1."
+    condition     = length(var.availability_zones) >= 2
+    error_message = "ArchVault requires at least two Availability Zones."
   }
 }
 
-variable "compute_instance_type" {
-  type        = string
-  description = "EC2 instance type for the application tier."
-  default     = "t3.micro"
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets"
+  type        = list(string)
+}
+
+variable "private_app_subnet_cidrs" {
+  description = "CIDR blocks for private application subnets"
+  type        = list(string)
+}
+
+variable "private_db_subnet_cidrs" {
+  description = "CIDR blocks for private database subnets"
+  type        = list(string)
+}
+
+variable "enable_nat_gateway" {
+  description = "Whether to create NAT Gateways"
+  type        = bool
+  default     = true
 }
 
 variable "common_tags" {
-  description = "Common tags applied to all ArchVault resources."
+  description = "Common tags applied to resources"
   type        = map(string)
-
-  default = {
-    Project   = "ArchVault"
-    ManagedBy = "Terraform"
-  }
+  default     = {}
 }
