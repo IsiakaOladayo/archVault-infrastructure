@@ -8,8 +8,23 @@ variable "environment" {
   type        = string
 }
 
-variable "kms_key_arn" {
-  description = "KMS key for S3 encryption"
+variable "primary_region" {
+  description = "Primary AWS region"
+  type        = string
+}
+
+variable "replica_region" {
+  description = "Disaster recovery region"
+  type        = string
+}
+
+variable "documents_kms_key_primary_arn" {
+  description = "Primary-region KMS key used for document encryption"
+  type        = string
+}
+
+variable "documents_kms_key_dr_arn" {
+  description = "DR-region KMS key used for document encryption"
   type        = string
 }
 
@@ -18,4 +33,3 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-

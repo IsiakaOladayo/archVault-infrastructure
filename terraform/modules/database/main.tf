@@ -16,10 +16,10 @@ resource "aws_rds_cluster" "primary" {
 }
 
 resource "aws_rds_cluster_instance" "primary_instances" {
-  provider             = aws.primary
-  count                = 3 # 1 Writer, 2 Readers across 3 AZs
-  identifier           = "archvault-primary-instance-${count.index}"
-  cluster_identifier   = aws_rds_cluster.primary.id
-  instance_class       = "db.r6g.large"
-  engine               = aws_rds_cluster.primary.engine
+  provider           = aws.primary
+  count              = 3 # 1 Writer, 2 Readers across 3 AZs
+  identifier         = "archvault-primary-instance-${count.index}"
+  cluster_identifier = aws_rds_cluster.primary.id
+  instance_class     = "db.r6g.large"
+  engine             = aws_rds_cluster.primary.engine
 }

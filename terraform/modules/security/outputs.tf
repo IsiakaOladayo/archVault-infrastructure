@@ -67,3 +67,23 @@ output "waf_web_acl_id" {
   description = "ID of the WAF Web ACL"
   value       = var.enable_waf ? aws_wafv2_web_acl.application[0].id : null
 }
+
+output "documents_kms_key_primary_arn" {
+  description = "ARN of the primary-region document encryption KMS key"
+  value       = aws_kms_key.documents_primary.arn
+}
+
+output "documents_kms_key_dr_arn" {
+  description = "ARN of the DR-region document encryption KMS key"
+  value       = aws_kms_key.documents_dr.arn
+}
+
+output "documents_kms_key_primary_id" {
+  description = "ID of the primary-region document encryption KMS key"
+  value       = aws_kms_key.documents_primary.key_id
+}
+
+output "documents_kms_key_dr_id" {
+  description = "ID of the DR-region document encryption KMS key"
+  value       = aws_kms_key.documents_dr.key_id
+}

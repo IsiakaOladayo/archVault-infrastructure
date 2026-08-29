@@ -24,7 +24,7 @@ variable "availability_zones" {
 
   validation {
     condition     = length(var.availability_zones) >= 2
-    error_message = "ArchVault requires at least two Availability Zones."
+    error_message = "TradeCore requires at least two Availability Zones."
   }
 }
 
@@ -54,3 +54,10 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "dr_region" {
+  description = "Disaster recovery region"
+  type        = string
+}
+
+

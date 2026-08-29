@@ -23,6 +23,11 @@ module "networking" {
 module "security" {
   source = "../../modules/security"
 
+  providers = {
+    aws.primary = aws
+    aws.dr      = aws.dr
+  }
+
   project_name = var.project_name
   environment  = var.environment
 
@@ -40,3 +45,23 @@ module "security" {
 }
 
 
+#storage module import
+module "storage" {
+  source = "../../modules/storage"
+
+  providers = {
+    aws.primary = aws
+    aws.replica = aws.dr
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  primary_region = var.primary_region
+  replica_region = var.dr_region
+
+  documents_kms_key_primary_arn = module.security.documents_kms_key_primary_arn
+  documents_kms_key_dr_arn      = module.security.documents_kms_key_dr_arn
+
+  common_tags = var.common_tags
+}

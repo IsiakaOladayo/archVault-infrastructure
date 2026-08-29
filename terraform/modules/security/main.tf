@@ -432,4 +432,48 @@ resource "aws_wafv2_web_acl" "application" {
       Name = "${var.project_name}-${var.environment}-waf"
     }
   )
-} 
+}
+
+resource "aws_kms_key" "documents_primary" {
+  provider = aws.primary
+
+  description             = "ArchVault document encryption key - primary region"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-documents-primary"
+    }
+  )
+}
+
+resource "aws_kms_alias" "documents_primary" {
+  provider = aws.primary
+
+  name          = "alias/${var.project_name}-${var.environment}-documents-primary"
+  target_key_id = aws_kms_key.documents_primary.key_id
+}
+
+resource "aws_kms_key" "documents_dr" {
+  provider = aws.dr
+
+  description             = "ArchVault document encryption key - DR region"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-documents-dr"
+    }
+  )
+}
+
+resource "aws_kms_alias" "documents_dr" {
+  provider = aws.dr
+
+  name          = "alias/${var.project_name}-${var.environment}-documents-dr"
+  target_key_id = aws_kms_key.documents_dr.key_id
+}
