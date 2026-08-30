@@ -1,19 +1,24 @@
-output "cluster_endpoint" {
-  description = "Aurora cluster endpoint"
-  value       = aws_rds_cluster.aurora.endpoint
+output "database_id" {
+  description = "RDS database identifier"
+  value       = aws_db_instance.this.id
 }
 
-output "reader_endpoint" {
-  description = "Aurora reader endpoint"
-  value       = aws_rds_cluster.aurora.reader_endpoint
+output "database_arn" {
+  description = "RDS database ARN"
+  value       = aws_db_instance.this.arn
 }
 
-output "rds_proxy_endpoint" {
-  description = "RDS Proxy endpoint"
-  value       = aws_db_proxy.application.endpoint
+output "database_endpoint" {
+  description = "RDS database endpoint"
+  value       = aws_db_instance.this.address
 }
 
-output "cluster_id" {
-  description = "Aurora cluster identifier"
-  value       = aws_rds_cluster.aurora.cluster_identifier
+output "database_port" {
+  description = "RDS database port"
+  value       = aws_db_instance.this.port
+}
+
+output "database_name" {
+  description = "Database name"
+  value       = aws_db_instance.this.db_name
 }

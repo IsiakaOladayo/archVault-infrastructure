@@ -1,59 +1,106 @@
-# Subnet Group for Cache placement in Tier 3 Isolated Subnets
-resource "aws_elasticache_subnet_group" "redis_subnets" {
-  name        = "archvault-redis-subnet-group"
-  subnet_ids  = var.isolated_subnet_ids
-  description = "Subnet group for ArchVault ElastiCache Redis in Tier 3 isolated network"
+locals {
+  common_tags = merge(
+    var.common_tags,
+    {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Layer       = "Cache"
+    }
+  )
 }
 
-# Security Group restricting inbound traffic to Redis (Port 6379) strictly from Tier 2 ECS tasks
-resource "aws_security_group" "redis_sg" {
-  name        = "archvault-redis-sg"
-  description = "Allow inbound Redis traffic from Tier 2 ECS application tasks only"
-  vpc_id      = var.vpc_id
+# =========================================================
+# REDIS SUBNET GROUP
+# =========================================================
 
-  ingress {
-    description     = "Redis from ECS Fargate tasks"
-    from_port       = 6379
-    to_port         = 6379
-    protocol        = "tcp"
-    security_groups = [var.ecs_security_group_id]
-  }
+resource "aws_elasticache_subnet_group" "redis" {
+  name = "${var.project_name}-${var.environment}-redis-subnet-group"
 
-  egress {
-    description = "Disallow outbound connections"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  subnet_ids = var.private_app_subnet_ids
 
-  tags = {
-    Name = "archvault-redis-sg"
-  }
+  description = "Private subnet group for ${var.project_name} Redis"
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-redis-subnet-group"
+    }
+  )
 }
 
-# Multi-AZ ElastiCache Redis Replication Group
+# =========================================================
+# REDIS PARAMETER GROUP
+# =========================================================
+
+resource "aws_elasticache_parameter_group" "redis" {
+  name = "${var.project_name}-${var.environment}-redis-params"
+
+  family = var.parameter_group_family
+
+  description = "Redis parameter group for ${var.project_name}"
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-redis-params"
+    }
+  )
+}
+
+# =========================================================
+# REDIS REPLICATION GROUP
+# =========================================================
+
 resource "aws_elasticache_replication_group" "redis" {
-  replication_group_id       = "archvault-redis-cluster"
-  description                = "High-availability multi-AZ Redis cache for Aurora read offloading"
-  node_type                  = "cache.r6g.large"
-  num_cache_clusters         = 3 # 1 Primary, 2 Read Replicas across 3 AZs
-  port                       = 6379
-  automatic_failover_enabled = true
-  multi_az_enabled           = true
-  subnet_group_name          = aws_elasticache_subnet_group.redis_subnets.name
-  security_group_ids         = [aws_security_group.redis_sg.id]
-  engine                     = "redis"
-  engine_version             = "7.0"
-  parameter_group_name       = "default.redis7"
+  replication_group_id = "${var.project_name}-${var.environment}-redis"
 
-  # Encryption & Security Compliance
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
-  kms_key_id                 = var.kms_key_arn
+  description = "Redis cache for ${var.project_name} ${var.environment}"
 
-  tags = {
-    Name        = "archvault-redis-cluster"
-    Environment = "Production"
-  }
+  engine = "redis"
+
+  engine_version = var.redis_engine_version
+
+  node_type = var.redis_node_type
+
+  port = var.redis_port
+
+  num_cache_clusters = var.redis_num_cache_nodes
+
+  parameter_group_name = aws_elasticache_parameter_group.redis.name
+
+  subnet_group_name = aws_elasticache_subnet_group.redis.name
+
+  security_group_ids = [
+    var.redis_security_group_id
+  ]
+
+  automatic_failover_enabled = var.automatic_failover_enabled
+
+  multi_az_enabled = var.multi_az_enabled
+
+  transit_encryption_enabled = var.transit_encryption_enabled
+
+  at_rest_encryption_enabled = var.at_rest_encryption_enabled
+
+  kms_key_id = var.kms_key_id
+
+  snapshot_retention_limit = var.snapshot_retention_limit
+
+  snapshot_window = var.snapshot_window
+
+  maintenance_window = var.maintenance_window
+
+  apply_immediately = var.apply_immediately
+
+  auto_minor_version_upgrade = true
+
+  notification_topic_arn = null
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-redis"
+    }
+  )
 }

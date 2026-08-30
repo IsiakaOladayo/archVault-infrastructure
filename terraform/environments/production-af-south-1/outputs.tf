@@ -42,3 +42,18 @@ output "nat_gateway_ids" {
   description = "NAT Gateway IDs"
   value       = module.networking.nat_gateway_ids
 }
+
+output "redis_endpoint" {
+  description = "Primary Redis endpoint."
+  value       = module.cache.redis_primary_endpoint_address
+}
+
+output "redis_port" {
+  description = "Redis port."
+  value       = module.cache.redis_primary_endpoint_port
+}
+
+output "redis_replication_group_id" {
+  description = "Redis replication group ID."
+  value       = module.cache.redis_replication_group_id
+}

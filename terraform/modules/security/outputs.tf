@@ -87,3 +87,8 @@ output "documents_kms_key_dr_id" {
   description = "ID of the DR-region document encryption KMS key"
   value       = aws_kms_key.documents_dr.key_id
 }
+
+output "application_security_group_id" {
+  description = "Security group ID for ECS application tasks"
+  value       = aws_security_group.ecs.id
+}

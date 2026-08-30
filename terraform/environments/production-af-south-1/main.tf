@@ -4,22 +4,15 @@ module "networking" {
   project_name = var.project_name
   environment  = var.environment
 
-  vpc_cidr = var.vpc_cidr
-
-  availability_zones = var.availability_zones
-
-  public_subnet_cidrs = var.public_subnet_cidrs
-
+  vpc_cidr                 = var.vpc_cidr
+  availability_zones       = var.availability_zones
+  public_subnet_cidrs      = var.public_subnet_cidrs
   private_app_subnet_cidrs = var.private_app_subnet_cidrs
-
-  private_db_subnet_cidrs = var.private_db_subnet_cidrs
-
-  enable_nat_gateway = true
+  private_db_subnet_cidrs  = var.private_db_subnet_cidrs
 
   common_tags = var.common_tags
 }
 
-#security modules import
 module "security" {
   source = "../../modules/security"
 
@@ -30,22 +23,11 @@ module "security" {
 
   project_name = var.project_name
   environment  = var.environment
-
-  vpc_id = module.networking.vpc_id
-
-  ecs_container_port = 3000
-
-  database_port = 5432
-
-  redis_port = 6379
-
-  enable_waf = true
+  vpc_id       = module.networking.vpc_id
 
   common_tags = var.common_tags
 }
 
-
-#storage module import
 module "storage" {
   source = "../../modules/storage"
 
@@ -62,6 +44,58 @@ module "storage" {
 
   documents_kms_key_primary_arn = module.security.documents_kms_key_primary_arn
   documents_kms_key_dr_arn      = module.security.documents_kms_key_dr_arn
+
+  common_tags = var.common_tags
+}
+
+module "compute" {
+  source = "../../modules/compute"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  vpc_id = module.networking.vpc_id
+
+  public_subnet_ids = module.networking.public_subnet_ids
+
+  private_app_subnet_ids = module.networking.private_app_subnet_ids
+
+  alb_security_group_id = module.security.alb_security_group_id
+
+  application_security_group_id = module.security.application_security_group_id
+
+  container_image = var.container_image
+
+  container_port = var.container_port
+
+  app_port = var.app_port
+
+  desired_count = var.ecs_desired_count
+
+  common_tags = var.common_tags
+}
+
+module "cache" {
+  source = "../../modules/cache"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  vpc_id = module.networking.vpc_id
+
+  private_app_subnet_ids = module.networking.private_app_subnet_ids
+
+  redis_security_group_id = module.security.redis_security_group_id
+
+  redis_node_type = var.redis_node_type
+
+  redis_engine_version = var.redis_engine_version
+
+  redis_num_cache_nodes = var.redis_num_cache_nodes
+
+  automatic_failover_enabled = var.redis_automatic_failover_enabled
+
+  multi_az_enabled = var.redis_multi_az_enabled
 
   common_tags = var.common_tags
 }

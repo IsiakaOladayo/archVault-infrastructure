@@ -1,19 +1,3 @@
-# ============================================================
-# ArchVault Compute Module
-# ============================================================
-
-# ------------------------------------------------------------
-# Ubuntu AMI
-# ------------------------------------------------------------
-
-data "aws_ssm_parameter" "ubuntu_ami" {
-  name = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
-}
-
-# ------------------------------------------------------------
-# Local Values
-# ------------------------------------------------------------
-
 locals {
   common_tags = merge(
     var.common_tags,
@@ -26,117 +10,188 @@ locals {
   )
 }
 
-# ============================================================
-# SECURITY GROUPS
-# ============================================================
+# ---------------------------------------------------------
+# CloudWatch Logs
+# ---------------------------------------------------------
 
-# ------------------------------------------------------------
-# ALB Security Group
-# ------------------------------------------------------------
-
-resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-${var.environment}-alb-sg"
-  description = "Security group for ArchVault Application Load Balancer"
-  vpc_id      = var.vpc_id
+resource "aws_cloudwatch_log_group" "application" {
+  name              = "/ecs/${var.project_name}/${var.environment}/application"
+  retention_in_days = var.log_retention_days
 
   tags = merge(
     local.common_tags,
     {
-      Name = "${var.project_name}-${var.environment}-alb-sg"
+      Name = "/ecs/${var.project_name}/${var.environment}/application"
     }
   )
 }
 
-# ------------------------------------------------------------
-# Application Security Group
-# ------------------------------------------------------------
+# ---------------------------------------------------------
+# ECS Cluster
+# ---------------------------------------------------------
 
-resource "aws_security_group" "application" {
-  name        = "${var.project_name}-${var.environment}-application-sg"
-  description = "Security group for ArchVault application instances"
-  vpc_id      = var.vpc_id
+resource "aws_ecs_cluster" "application" {
+  name = "${var.project_name}-${var.environment}"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 
   tags = merge(
     local.common_tags,
     {
-      Name = "${var.project_name}-${var.environment}-application-sg"
+      Name = "${var.project_name}-${var.environment}-ecs-cluster"
     }
   )
 }
 
-# ------------------------------------------------------------
-# ALB Ingress - HTTP
-# ------------------------------------------------------------
+# ---------------------------------------------------------
+# ECS Task Execution Role
+# ---------------------------------------------------------
 
-resource "aws_vpc_security_group_ingress_rule" "alb_http" {
-  security_group_id = aws_security_group.alb.id
+resource "aws_iam_role" "ecs_task_execution" {
+  name = "${var.project_name}-${var.environment}-ecs-execution-role"
 
-  cidr_ipv4   = "0.0.0.0/0"
-  from_port   = 80
-  to_port     = 80
-  ip_protocol = "tcp"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ecs-execution-role"
+    }
+  )
 }
 
-# ------------------------------------------------------------
-# ALB Ingress - HTTPS
-# ------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
+  role = aws_iam_role.ecs_task_execution.name
 
-resource "aws_vpc_security_group_ingress_rule" "alb_https" {
-  security_group_id = aws_security_group.alb.id
-
-  cidr_ipv4   = "0.0.0.0/0"
-  from_port   = 443
-  to_port     = 443
-  ip_protocol = "tcp"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ------------------------------------------------------------
-# Application Ingress - ALB Only
-# ------------------------------------------------------------
+# ---------------------------------------------------------
+# ECS Task Role
+# ---------------------------------------------------------
 
-resource "aws_vpc_security_group_ingress_rule" "application_from_alb" {
-  security_group_id = aws_security_group.application.id
+resource "aws_iam_role" "ecs_task" {
+  name = "${var.project_name}-${var.environment}-ecs-task-role"
 
-  referenced_security_group_id = aws_security_group.alb.id
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
 
-  from_port   = var.app_port
-  to_port     = var.app_port
-  ip_protocol = "tcp"
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ecs-task-role"
+    }
+  )
 }
 
-# ------------------------------------------------------------
-# ALB Egress
-# ------------------------------------------------------------
+# ---------------------------------------------------------
+# ECS Task Definition
+# ---------------------------------------------------------
 
-resource "aws_vpc_security_group_egress_rule" "alb_all" {
-  security_group_id = aws_security_group.alb.id
+resource "aws_ecs_task_definition" "application" {
+  family = "${var.project_name}-${var.environment}"
 
-  cidr_ipv4   = "0.0.0.0/0"
-  ip_protocol = "-1"
+  network_mode = "awsvpc"
+
+  requires_compatibilities = [
+    "FARGATE"
+  ]
+
+  cpu    = var.cpu
+  memory = var.memory
+
+  execution_role_arn = aws_iam_role.ecs_task_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "${var.project_name}-application"
+      image = var.container_image
+
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = var.container_port
+          hostPort      = var.container_port
+          protocol      = "tcp"
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.application.name
+          awslogs-region        = "af-south-1"
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+
+      healthCheck = {
+        command = [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:${var.container_port}${var.health_check_path} || exit 1"
+        ]
+
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 30
+      }
+    }
+  ])
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-task-definition"
+    }
+  )
 }
 
-# ------------------------------------------------------------
-# Application Egress
-# ------------------------------------------------------------
-
-resource "aws_vpc_security_group_egress_rule" "application_all" {
-  security_group_id = aws_security_group.application.id
-
-  cidr_ipv4   = "0.0.0.0/0"
-  ip_protocol = "-1"
-}
-
-# ============================================================
-# APPLICATION LOAD BALANCER
-# ============================================================
+# ---------------------------------------------------------
+# Application Load Balancer
+# ---------------------------------------------------------
 
 resource "aws_lb" "application" {
-  name               = "${var.project_name}-${var.environment}-alb"
+  name = "${var.project_name}-${var.environment}-alb"
+
   internal           = false
   load_balancer_type = "application"
 
   security_groups = [
-    aws_security_group.alb.id
+    var.alb_security_group_id
   ]
 
   subnets = var.public_subnet_ids
@@ -151,28 +206,38 @@ resource "aws_lb" "application" {
   )
 }
 
-# ============================================================
-# TARGET GROUP
-# ============================================================
+# ---------------------------------------------------------
+# ALB Target Group
+# ---------------------------------------------------------
 
 resource "aws_lb_target_group" "application" {
-  name        = "${var.project_name}-${var.environment}-tg"
-  port        = var.app_port
-  protocol    = "HTTP"
-  target_type = "instance"
-  vpc_id      = var.vpc_id
+  name = "${var.project_name}-${var.environment}-tg"
+
+  port     = var.app_port
+  protocol = "HTTP"
+
+  target_type = "ip"
+
+  vpc_id = var.vpc_id
 
   health_check {
-    enabled             = true
-    path                = var.health_check_path
-    protocol            = "HTTP"
-    port                = "traffic-port"
+    enabled = true
+
+    path     = var.health_check_path
+    protocol = "HTTP"
+
+    port = "traffic-port"
+
     healthy_threshold   = 2
     unhealthy_threshold = 3
-    timeout             = 5
-    interval            = 15
-    matcher             = "200-399"
+
+    timeout  = 5
+    interval = 30
+
+    matcher = "200-399"
   }
+
+  deregistration_delay = 30
 
   tags = merge(
     local.common_tags,
@@ -182,9 +247,9 @@ resource "aws_lb_target_group" "application" {
   )
 }
 
-# ============================================================
-# ALB LISTENER
-# ============================================================
+# ---------------------------------------------------------
+# ALB HTTP Listener
+# ---------------------------------------------------------
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.application.arn
@@ -193,212 +258,64 @@ resource "aws_lb_listener" "http" {
   protocol = "HTTP"
 
   default_action {
-    type             = "forward"
+    type = "forward"
+
     target_group_arn = aws_lb_target_group.application.arn
   }
+
+  tags = local.common_tags
 }
 
-# ============================================================
-# EC2 LAUNCH TEMPLATE
-# ============================================================
+# ---------------------------------------------------------
+# ECS Service
+# ---------------------------------------------------------
 
-resource "aws_launch_template" "application" {
-  name_prefix = "${var.project_name}-${var.environment}-"
+resource "aws_ecs_service" "application" {
+  name = "${var.project_name}-${var.environment}"
 
-  image_id      = data.aws_ssm_parameter.ubuntu_ami.value
-  instance_type = var.instance_type
+  cluster = aws_ecs_cluster.application.id
 
-  key_name = var.ssh_key_name
+  task_definition = aws_ecs_task_definition.application.arn
 
-  vpc_security_group_ids = [
-    aws_security_group.application.id
+  desired_count = var.desired_count
+
+  launch_type = "FARGATE"
+
+  platform_version = "LATEST"
+
+  enable_execute_command = var.enable_execute_command
+
+  network_configuration {
+    subnets = var.private_app_subnet_ids
+
+    security_groups = [
+      var.application_security_group_id
+    ]
+
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.application.arn
+
+    container_name = "${var.project_name}-application"
+
+    container_port = var.container_port
+  }
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
+  health_check_grace_period_seconds = 60
+
+  depends_on = [
+    aws_lb_listener.http
   ]
 
-  # ----------------------------------------------------------
-  # Instance Metadata Service
-  # ----------------------------------------------------------
-
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-  }
-
-  # ----------------------------------------------------------
-  # EBS Root Volume
-  # ----------------------------------------------------------
-
-  block_device_mappings {
-    device_name = "/dev/sda1"
-
-    ebs {
-      volume_size           = 20
-      volume_type           = "gp3"
-      encrypted             = true
-      delete_on_termination = true
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.project_name}-${var.environment}-ecs-service"
     }
-  }
-
-  # ----------------------------------------------------------
-  # EC2 User Data
-  # ----------------------------------------------------------
-
-  user_data = base64encode(<<-EOF
-    #!/bin/bash
-
-    set -e
-
-    apt-get update -y
-    apt-get install -y nginx
-
-    systemctl enable nginx
-    systemctl start nginx
-
-    cat > /var/www/html/index.html <<'HTML'
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>ArchVault</title>
-      </head>
-      <body>
-        <h1>ArchVault</h1>
-        <p>Application server is running.</p>
-      </body>
-    </html>
-    HTML
-
-    cat > /var/www/html/health <<'HTML'
-    healthy
-    HTML
-
-    # Configure nginx to listen on the application port
-    cat > /etc/nginx/sites-available/default <<'NGINX'
-    server {
-        listen 3000 default_server;
-        listen [::]:3000 default_server;
-
-        root /var/www/html;
-
-        index index.html;
-
-        location / {
-            try_files $uri $uri/ =404;
-        }
-
-        location /health {
-            default_type text/plain;
-            return 200 "healthy\n";
-        }
-    }
-    NGINX
-
-    nginx -t
-    systemctl restart nginx
-  EOF
   )
-
-  # ----------------------------------------------------------
-  # EC2 Monitoring
-  # ----------------------------------------------------------
-
-  monitoring {
-    enabled = true
-  }
-
-  # ----------------------------------------------------------
-  # Instance Tags
-  # ----------------------------------------------------------
-
-  tag_specifications {
-    resource_type = "instance"
-
-    tags = merge(
-      local.common_tags,
-      {
-        Name = "${var.project_name}-${var.environment}-application"
-      }
-    )
-  }
-
-  # ----------------------------------------------------------
-  # EBS Volume Tags
-  # ----------------------------------------------------------
-
-  tag_specifications {
-    resource_type = "volume"
-
-    tags = merge(
-      local.common_tags,
-      {
-        Name = "${var.project_name}-${var.environment}-application-volume"
-      }
-    )
-  }
-}
-
-# ============================================================
-# AUTO SCALING GROUP
-# ============================================================
-
-resource "aws_autoscaling_group" "application" {
-  name = "${var.project_name}-${var.environment}-asg"
-
-  min_size         = var.min_size
-  desired_capacity = var.desired_capacity
-  max_size         = var.max_size
-
-  # EC2 instances are placed in private application subnets.
-  vpc_zone_identifier = var.application_subnet_ids
-
-  # Register instances automatically with the ALB target group.
-  target_group_arns = [
-    aws_lb_target_group.application.arn
-  ]
-
-  # Use ELB health checks rather than only EC2 status checks.
-  health_check_type         = "ELB"
-  health_check_grace_period = 300
-
-  launch_template {
-    id      = aws_launch_template.application.id
-    version = "$Latest"
-  }
-
-  # ----------------------------------------------------------
-  # Instance Tags
-  # ----------------------------------------------------------
-
-  tag {
-    key                 = "Name"
-    value               = "${var.project_name}-${var.environment}-application"
-    propagate_at_launch = true
-  }
-
-  dynamic "tag" {
-    for_each = local.common_tags
-
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = true
-    }
-  }
-}
-
-# ============================================================
-# AUTO SCALING POLICY
-# ============================================================
-
-resource "aws_autoscaling_policy" "cpu_target" {
-  name                   = "${var.project_name}-${var.environment}-cpu-target"
-  autoscaling_group_name = aws_autoscaling_group.application.name
-  policy_type            = "TargetTrackingScaling"
-
-  target_tracking_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ASGAverageCPUUtilization"
-    }
-
-    target_value = 50
-  }
 }
