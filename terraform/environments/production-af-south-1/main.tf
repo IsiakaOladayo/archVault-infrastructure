@@ -99,3 +99,12 @@ module "cache" {
 
   common_tags = var.common_tags
 }
+
+module "database" {
+  source = "./modules/database"
+
+  providers = {
+    aws.primary = aws.primary
+    aws.dr      = aws.dr
+  }
+}
