@@ -32,3 +32,13 @@ output "availability_zones" {
   description = "Availability Zones used by the network"
   value       = var.availability_zones
 }
+
+output "nat_gateway_id" {
+  description = "ID of the single regional NAT Gateway (null if disabled)"
+  value       = var.enable_nat_gateway ? aws_nat_gateway.main[0].id : null
+}
+
+output "flow_log_group_name" {
+  description = "CloudWatch log group receiving VPC Flow Logs"
+  value       = aws_cloudwatch_log_group.flow_logs.name
+}
