@@ -52,3 +52,8 @@ output "cloudwatch_log_group_name" {
   description = "Application CloudWatch log group"
   value       = aws_cloudwatch_log_group.application.name
 }
+
+output "alb_https_listener_arn" {
+  description = "ARN of the ALB HTTPS listener"
+  value       = aws_lb_listener.https.arn
+}
