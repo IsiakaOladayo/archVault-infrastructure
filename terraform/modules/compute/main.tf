@@ -310,7 +310,7 @@ resource "aws_ecs_service" "application" {
   health_check_grace_period_seconds = 60
 
   depends_on = [
-    aws_lb_listener.http
+    aws_lb_listener.https
   ]
 
   tags = merge(
