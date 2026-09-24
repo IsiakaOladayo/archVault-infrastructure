@@ -28,7 +28,7 @@ module "security" {
   environment  = var.environment
 
   vpc_id    = module.networking.vpc_id
-  dr_vpc_id = module.networking_dr.vpc_id   # pending DR networking module
+  dr_vpc_id = module.networking.dr.vpc_id   # pending DR networking module
 
   documents_kms_key_arn = module.kms.documents_kms_key_primary_arn
   secrets_kms_key_arn   = module.kms.secrets_kms_key_arn
@@ -52,6 +52,19 @@ module "storage" {
 
   documents_kms_key_primary_arn = module.kms.documents_kms_key_primary_arn
   documents_kms_key_dr_arn      = module.kms.documents_kms_key_dr_arn
+  logs_kms_key_arn              = module.kms.logs_kms_key_arn   # add this
+
+  common_tags = var.common_tags
+}
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  primary_region = var.primary_region
+  replica_region = var.dr_region
+
+  documents_kms_key_primary_arn = module.kms.documents_kms_key_primary_arn
+  documents_kms_key_dr_arn      = module.kms.documents_kms_key_dr_arn
 
   common_tags = var.common_tags
 }
@@ -62,26 +75,22 @@ module "compute" {
   project_name = var.project_name
   environment  = var.environment
 
-  vpc_id = module.networking.vpc_id
+  vpc_id                  = module.networking.vpc_id
+  public_subnet_ids       = module.networking.public_subnet_ids
+  private_app_subnet_ids  = module.networking.private_app_subnet_ids
 
-  public_subnet_ids = module.networking.public_subnet_ids
-
-  private_app_subnet_ids = module.networking.private_app_subnet_ids
-
-  alb_security_group_id = module.security.alb_security_group_id
-
+  alb_security_group_id         = module.security.alb_security_group_id
   application_security_group_id = module.security.application_security_group_id
 
+  ecs_execution_role_arn = module.security.ecs_execution_role_arn   # add
+  ecs_task_role_arn      = module.security.ecs_task_role_arn         # add
+
   container_image = var.container_image
-
-  container_port = var.container_port
-
-  app_port = var.app_port
-
-  desired_count = var.ecs_desired_count
+  container_port  = var.container_port
+  app_port        = var.app_port
+  desired_count   = var.ecs_desired_count
 
   certificate_arn = var.certificate_arn
-
   waf_web_acl_arn = module.security.regional_waf_web_acl_arn
 
   common_tags = var.common_tags
