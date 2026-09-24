@@ -64,3 +64,15 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "flow_log_retention_days" {
+  description = "Number of days VPC Flow Logs are retained in CloudWatch"
+  type        = number
+  default     = 90
+}
+
+variable "flow_log_kms_key_arn" {
+  description = "KMS key ARN used to encrypt the VPC Flow Logs CloudWatch log group. Null uses default CloudWatch encryption."
+  type        = string
+  default     = null
+}
