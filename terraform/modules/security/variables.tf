@@ -9,17 +9,19 @@ variable "environment" {
 }
 
 variable "vpc_id" {
-  description = "VPC ID where security resources will be created"
+  description = "Primary-region VPC ID"
+  type        = string
+}
+
+variable "dr_vpc_id" {
+  description = "DR-region (eu-west-1) VPC ID"
   type        = string
 }
 
 variable "alb_ingress_cidr_blocks" {
   description = "CIDR blocks allowed to access the ALB"
   type        = list(string)
-
-  default = [
-    "0.0.0.0/0"
-  ]
+  default     = ["0.0.0.0/0"]
 }
 
 variable "ecs_container_port" {
@@ -41,9 +43,25 @@ variable "redis_port" {
 }
 
 variable "enable_waf" {
-  description = "Whether to create the WAF Web ACL"
+  description = "Whether to create WAF Web ACLs"
   type        = bool
   default     = true
+}
+
+variable "waf_rate_limit" {
+  description = "Max requests per 5-minute rolling window, per IP, before WAF blocks (ADR-08: 2,000)"
+  type        = number
+  default     = 2000
+}
+
+variable "documents_kms_key_arn" {
+  description = "ARN of the S3 documents/invoices CMK (from the kms module), granted to the ECS task role"
+  type        = string
+}
+
+variable "secrets_kms_key_arn" {
+  description = "ARN of the Secrets Manager CMK (from the kms module), granted to the ECS task role"
+  type        = string
 }
 
 variable "common_tags" {
