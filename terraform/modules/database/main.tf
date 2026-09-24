@@ -58,7 +58,7 @@ resource "aws_rds_cluster" "primary" {
 
   # Secrets Manager-managed credential (ADR-06) — no plaintext password variable
   manage_master_user_password   = true
-  master_user_secret_kms_key_id = var.database_kms_key_arn
+  master_user_secret_kms_key_id = var.secrets_kms_key_arn  
 
   db_subnet_group_name   = aws_db_subnet_group.primary.name
   vpc_security_group_ids = [var.database_security_group_id]
@@ -195,11 +195,11 @@ resource "aws_iam_role_policy" "rds_proxy_secrets" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue"]
-        Resource = [aws_rds_cluster.primary.master_user_secret[0].secret_arn]
-      },
+  {
+    Effect   = "Allow"
+    Action   = ["kms:Decrypt"]
+    Resource = [var.secrets_kms_key_arn]
+  },
       {
         Effect   = "Allow"
         Action   = ["kms:Decrypt"]
