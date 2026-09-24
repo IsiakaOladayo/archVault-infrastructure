@@ -92,3 +92,31 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN for the HTTPS listener"
+  type        = string
+}
+
+variable "min_capacity" {
+  description = "Minimum ECS task count for autoscaling"
+  type        = number
+  default     = 3
+}
+
+variable "max_capacity" {
+  description = "Maximum ECS task count for autoscaling"
+  type        = number
+  default     = 50
+}
+
+variable "cpu_target_value" {
+  description = "Target CPU utilization percentage for autoscaling"
+  type        = number
+  default     = 60
+}
+
+variable "waf_web_acl_arn" {
+  description = "Regional WAF Web ACL ARN to associate with the ALB"
+  type        = string
+}
