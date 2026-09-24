@@ -19,13 +19,19 @@ module "security" {
   source = "../../modules/security"
 
   providers = {
-    aws.primary = aws
-    aws.dr      = aws.dr
+    aws.primary   = aws.primary
+    aws.dr        = aws.dr
+    aws.us_east_1 = aws.us_east_1
   }
 
   project_name = var.project_name
   environment  = var.environment
-  vpc_id       = module.networking.vpc_id
+
+  vpc_id    = module.networking.vpc_id
+  dr_vpc_id = module.networking_dr.vpc_id   # pending DR networking module
+
+  documents_kms_key_arn = module.kms.documents_kms_key_primary_arn
+  secrets_kms_key_arn   = module.kms.secrets_kms_key_arn
 
   common_tags = var.common_tags
 }
