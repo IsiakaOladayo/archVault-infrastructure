@@ -73,7 +73,7 @@ variable "max_allocated_storage" {
 variable "backup_retention_period" {
   description = "Number of days automated backups are retained"
   type        = number
-  default     = 7
+  default     = 35  
 }
 
 variable "common_tags" {
@@ -107,4 +107,10 @@ variable "secondary_instance_count" {
   description = "Number of Aurora instances in the secondary cluster"
   type        = number
   default     = 1
+}
+
+variable "deletion_protection" {
+  description = "Enable deletion protection on Aurora clusters"
+  type        = bool
+  default     = false
 }
