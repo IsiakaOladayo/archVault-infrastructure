@@ -217,15 +217,15 @@ resource "aws_lb_target_group" "application" {
     port = "traffic-port"
 
     healthy_threshold   = 2
-    unhealthy_threshold = 3
+    unhealthy_threshold = 2
 
     timeout  = 5
-    interval = 30
+    interval = 10
 
     matcher = "200-399"
   }
 
-  deregistration_delay = 30
+  deregistration_delay = 15
 
   tags = merge(
     local.common_tags,
@@ -236,17 +236,34 @@ resource "aws_lb_target_group" "application" {
 }
 
 # ALB HTTP Listener
-
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.application.arn
-
-  port     = 80
-  protocol = "HTTP"
+  port               = 80
+  protocol           = "HTTP"
 
   default_action {
-    type = "forward"
+    type = "redirect"
 
-    target_group_arn = aws_lb_target_group.application.arn
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.application.arn
+  port               = 443
+  protocol           = "HTTPS"
+  ssl_policy         = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn    = var.certificate_arn
+
+  default_action {
+    type              = "forward"
+    target_group_arn  = aws_lb_target_group.application.arn
   }
 
   tags = local.common_tags
@@ -302,4 +319,34 @@ resource "aws_ecs_service" "application" {
       Name = "${var.project_name}-${var.environment}-ecs-service"
     }
   )
+}
+
+resource "aws_appautoscaling_target" "ecs" {
+  max_capacity       = var.max_capacity
+  min_capacity       = var.min_capacity
+  resource_id        = "service/${aws_ecs_cluster.application.name}/${aws_ecs_service.application.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "cpu" {
+  name               = "${var.project_name}-${var.environment}-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension  = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace   = aws_appautoscaling_target.ecs.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.cpu_target_value
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 30
+  }
+}
+
+resource "aws_wafv2_web_acl_association" "alb" {
+  resource_arn = aws_lb.application.arn
+  web_acl_arn  = var.waf_web_acl_arn
 }
