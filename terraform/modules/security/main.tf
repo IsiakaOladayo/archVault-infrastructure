@@ -251,9 +251,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task" {
   policy_arn = aws_iam_policy.ecs_task.arn
 }
 
-# =========================================================
 # WAF — REGIONAL (attached to the ALB)
-# =========================================================
 
 resource "aws_wafv2_web_acl" "regional" {
   count = var.enable_waf ? 1 : 0
