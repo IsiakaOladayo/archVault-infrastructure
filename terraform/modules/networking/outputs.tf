@@ -42,3 +42,28 @@ output "flow_log_group_name" {
   description = "CloudWatch log group receiving VPC Flow Logs"
   value       = aws_cloudwatch_log_group.flow_logs.name
 }
+
+output "dr_vpc_id" {
+  description = "ID of the DR-region VPC"
+  value       = aws_vpc.dr.id
+}
+
+output "dr_public_subnet_ids" {
+  description = "IDs of the DR public subnets"
+  value       = aws_subnet.dr_public[*].id
+}
+
+output "dr_private_app_subnet_ids" {
+  description = "IDs of the DR private application subnets (pilot-light health-check task)"
+  value       = aws_subnet.dr_private_app[*].id
+}
+
+output "dr_private_db_subnet_ids" {
+  description = "IDs of the DR private database subnets (Aurora secondary cluster)"
+  value       = aws_subnet.dr_private_db[*].id
+}
+
+output "dr_nat_gateway_id" {
+  description = "ID of the DR regional NAT Gateway (null if disabled)"
+  value       = var.enable_dr_nat_gateway ? aws_nat_gateway.dr[0].id : null
+}
