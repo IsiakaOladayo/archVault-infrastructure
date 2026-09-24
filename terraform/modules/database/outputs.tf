@@ -48,7 +48,7 @@ output "rds_proxy_arn" {
   value       = aws_db_proxy.primary.arn
 }
 
-output "alb_arn_suffix" {
-  description = "ARN suffix of the ALB, used for CloudWatch metric dimensions"
-  value       = aws_lb.application.arn_suffix
+output "rds_proxy_name" {
+  description = "Name of the RDS Proxy, used for CloudWatch metric dimensions"
+  value       = aws_db_proxy.primary.name
 }
