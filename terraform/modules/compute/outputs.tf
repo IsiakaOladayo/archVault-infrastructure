@@ -57,3 +57,8 @@ output "alb_https_listener_arn" {
   description = "ARN of the ALB HTTPS listener"
   value       = aws_lb_listener.https.arn
 }
+
+output "alb_arn_suffix" {
+  description = "ARN suffix of the ALB, used for CloudWatch metric dimensions"
+  value       = aws_lb.application.arn_suffix
+}
