@@ -144,3 +144,38 @@ module "kms" {
 
   common_tags = var.common_tags
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  ecs_cluster_name = module.compute.ecs_cluster_id
+  ecs_service_name = module.compute.ecs_service_name
+  alb_arn_suffix   = module.compute.alb_arn_suffix
+
+  log_group_name = module.compute.cloudwatch_log_group_name
+
+  database_cluster_id = module.database.primary_cluster_id
+
+  rds_proxy_name             = module.database.rds_proxy_name
+  rds_proxy_max_connections  = var.rds_proxy_max_connections
+
+  elasticache_replication_group_id = module.cache.redis_replication_group_id
+
+  alarm_email = var.alarm_email
+
+  common_tags = var.common_tags
+}
+
+variable "rds_proxy_max_connections" {
+  description = "Max connections on the RDS Proxy target group for this environment"
+  type        = number
+}
+
+variable "alarm_email" {
+  description = "Email address to subscribe to the monitoring alarm SNS topic"
+  type        = string
+  default     = null
+}
