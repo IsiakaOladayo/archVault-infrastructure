@@ -114,3 +114,8 @@ variable "deletion_protection" {
   type        = bool
   default     = false
 }
+
+variable "secrets_kms_key_arn" {
+  description = "KMS key ARN used to encrypt the Secrets Manager master-user secret"
+  type        = string
+}
