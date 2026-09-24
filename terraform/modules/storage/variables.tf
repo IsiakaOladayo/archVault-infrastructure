@@ -24,7 +24,7 @@ variable "replica_region" {
 variable "enable_dr_replication" {
   description = "Whether invoice documents replicate to the DR region. Leave false until the data-residency ADR is resolved — the Architecture Review's documented position is no cross-region S3 replication."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "documents_kms_key_primary_arn" {
