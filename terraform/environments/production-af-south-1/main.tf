@@ -135,3 +135,17 @@ module "database" {
   common_tags = var.common_tags
 }
 }
+
+module "kms" {
+  source = "../../modules/kms"
+
+  providers = {
+    aws.primary = aws.primary
+    aws.dr      = aws.dr
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  common_tags = var.common_tags
+}
