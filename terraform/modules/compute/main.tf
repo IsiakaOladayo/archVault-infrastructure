@@ -10,9 +10,7 @@ locals {
   )
 }
 
-# ---------------------------------------------------------
 # CloudWatch Logs
-# ---------------------------------------------------------
 
 resource "aws_cloudwatch_log_group" "application" {
   name              = "/ecs/${var.project_name}/${var.environment}/application"
@@ -46,9 +44,7 @@ resource "aws_ecs_cluster" "application" {
   )
 }
 
-# ---------------------------------------------------------
 # ECS Task Execution Role
-# ---------------------------------------------------------
 
 resource "aws_iam_role" "ecs_task_execution" {
   name = "${var.project_name}-${var.environment}-ecs-execution-role"
@@ -83,9 +79,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ---------------------------------------------------------
 # ECS Task Role
-# ---------------------------------------------------------
 
 resource "aws_iam_role" "ecs_task" {
   name = "${var.project_name}-${var.environment}-ecs-task-role"
@@ -114,9 +108,7 @@ resource "aws_iam_role" "ecs_task" {
   )
 }
 
-# ---------------------------------------------------------
 # ECS Task Definition
-# ---------------------------------------------------------
 
 resource "aws_ecs_task_definition" "application" {
   family = "${var.project_name}-${var.environment}"
@@ -180,9 +172,7 @@ resource "aws_ecs_task_definition" "application" {
   )
 }
 
-# ---------------------------------------------------------
 # Application Load Balancer
-# ---------------------------------------------------------
 
 resource "aws_lb" "application" {
   name = "${var.project_name}-${var.environment}-alb"
@@ -206,9 +196,7 @@ resource "aws_lb" "application" {
   )
 }
 
-# ---------------------------------------------------------
 # ALB Target Group
-# ---------------------------------------------------------
 
 resource "aws_lb_target_group" "application" {
   name = "${var.project_name}-${var.environment}-tg"
@@ -247,9 +235,7 @@ resource "aws_lb_target_group" "application" {
   )
 }
 
-# ---------------------------------------------------------
 # ALB HTTP Listener
-# ---------------------------------------------------------
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.application.arn
@@ -266,9 +252,7 @@ resource "aws_lb_listener" "http" {
   tags = local.common_tags
 }
 
-# ---------------------------------------------------------
 # ECS Service
-# ---------------------------------------------------------
 
 resource "aws_ecs_service" "application" {
   name = "${var.project_name}-${var.environment}"
