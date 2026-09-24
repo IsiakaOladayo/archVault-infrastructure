@@ -72,6 +72,10 @@ module "compute" {
 
   desired_count = var.ecs_desired_count
 
+  certificate_arn = var.certificate_arn
+
+  waf_web_acl_arn = module.security.regional_waf_web_acl_arn
+
   common_tags = var.common_tags
 }
 
@@ -107,4 +111,27 @@ module "database" {
     aws.primary = aws.primary
     aws.dr      = aws.dr
   }
+
+  module "database" {
+  source = "../../modules/database"
+
+  providers = {
+    aws.primary = aws.primary
+    aws.dr      = aws.dr
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  vpc_id                      = module.networking.vpc_id
+  private_db_subnet_ids       = module.networking.private_db_subnet_ids
+  database_security_group_id  = module.security.database_security_group_id
+  database_kms_key_arn        = module.security.database_kms_key_primary_arn
+
+  dr_private_db_subnet_ids       = module.networking.dr_private_db_subnet_ids
+  dr_database_security_group_id  = module.security.dr_database_security_group_id
+  secondary_kms_key_arn          = module.security.database_kms_key_dr_arn
+
+  common_tags = var.common_tags
+}
 }
