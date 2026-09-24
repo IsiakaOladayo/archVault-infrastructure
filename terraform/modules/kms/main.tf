@@ -161,6 +161,10 @@ resource "aws_kms_replica_key" "documents_dr" {
 
 # S3 LOGS KEY (primary region only — audit logs, WAF logs, VPC Flow Logs)
 
+data "aws_region" "primary" {
+  provider = aws.primary
+}
+
 resource "aws_kms_key" "logs" {
   provider = aws.primary
 
@@ -169,12 +173,61 @@ resource "aws_kms_key" "logs" {
   rotation_period_in_days = 365
   deletion_window_in_days = var.deletion_window_in_days
 
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowRootAccountFullAccess"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.primary.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowCloudWatchLogsEncryption"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${data.aws_region.primary.name}.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt*",
+          "kms:Decrypt*",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:Describe*"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${data.aws_region.primary.name}:${data.aws_caller_identity.primary.account_id}:*"
+          }
+        }
+      },
+      {
+        Sid    = "AllowS3ServiceEncryption"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt*",
+          "kms:Decrypt*",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:Describe*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
   tags = merge(
     local.common_tags,
     { Name = "${var.project_name}-${var.environment}-logs-cmk" }
   )
 }
-
 resource "aws_kms_alias" "logs" {
   provider = aws.primary
 
