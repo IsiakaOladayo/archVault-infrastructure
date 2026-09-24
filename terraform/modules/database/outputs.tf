@@ -1,24 +1,49 @@
-output "database_id" {
-  description = "RDS database identifier"
-  value       = aws_db_instance.this.id
+output "global_cluster_id" {
+  description = "ID of the Aurora Global Database cluster"
+  value       = aws_rds_global_cluster.archvault_global.id
 }
 
-output "database_arn" {
-  description = "RDS database ARN"
-  value       = aws_db_instance.this.arn
+output "primary_cluster_id" {
+  description = "ID of the primary Aurora cluster (af-south-1)"
+  value       = aws_rds_cluster.primary.id
 }
 
-output "database_endpoint" {
-  description = "RDS database endpoint"
-  value       = aws_db_instance.this.address
+output "primary_cluster_arn" {
+  description = "ARN of the primary Aurora cluster"
+  value       = aws_rds_cluster.primary.arn
 }
 
-output "database_port" {
-  description = "RDS database port"
-  value       = aws_db_instance.this.port
+output "primary_cluster_endpoint" {
+  description = "Writer endpoint of the primary Aurora cluster"
+  value       = aws_rds_cluster.primary.endpoint
 }
 
-output "database_name" {
-  description = "Database name"
-  value       = aws_db_instance.this.db_name
+output "primary_cluster_reader_endpoint" {
+  description = "Reader endpoint of the primary Aurora cluster"
+  value       = aws_rds_cluster.primary.reader_endpoint
+}
+
+output "primary_master_secret_arn" {
+  description = "Secrets Manager ARN holding the primary cluster's master credentials"
+  value       = aws_rds_cluster.primary.master_user_secret[0].secret_arn
+}
+
+output "secondary_cluster_id" {
+  description = "ID of the secondary (DR) Aurora cluster (eu-west-1)"
+  value       = aws_rds_cluster.secondary.id
+}
+
+output "secondary_cluster_endpoint" {
+  description = "Endpoint of the secondary Aurora cluster"
+  value       = aws_rds_cluster.secondary.endpoint
+}
+
+output "rds_proxy_endpoint" {
+  description = "Endpoint of the RDS Proxy in front of the primary cluster"
+  value       = aws_db_proxy.primary.endpoint
+}
+
+output "rds_proxy_arn" {
+  description = "ARN of the RDS Proxy"
+  value       = aws_db_proxy.primary.arn
 }
