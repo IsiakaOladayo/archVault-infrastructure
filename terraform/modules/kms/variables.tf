@@ -22,7 +22,7 @@ variable "deletion_window_in_days" {
 variable "enable_documents_dr_replication" {
   description = "Whether the S3 documents (invoices) CMK is replicated to the DR region. Gated pending resolution of the data-residency ADR — leave false unless S3 CRR to eu-west-1 has been formally approved."
   type        = bool
-  default     = True
+  default     = true
 }
 
 variable "rds_service_principal" {
