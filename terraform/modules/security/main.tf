@@ -10,9 +10,7 @@ locals {
   )
 }
 
-# =========================================================
 # SECURITY GROUPS — PRIMARY REGION
-# =========================================================
 
 resource "aws_security_group" "alb" {
   provider = aws.primary
@@ -147,9 +145,7 @@ resource "aws_vpc_security_group_egress_rule" "redis_all" {
   description        = "Allow Redis outbound traffic"
 }
 
-# =========================================================
 # SECURITY GROUP — DR REGION (Aurora secondary cluster)
-# =========================================================
 
 resource "aws_security_group" "database_dr" {
   provider = aws.dr
@@ -173,10 +169,8 @@ resource "aws_vpc_security_group_egress_rule" "database_dr_all" {
   description        = "Allow DR database outbound traffic"
 }
 
-# =========================================================
 # IAM — ECS EXECUTION + TASK ROLES
 # (moved here from compute — see note in review)
-# =========================================================
 
 resource "aws_iam_role" "ecs_execution" {
   provider = aws.primary
