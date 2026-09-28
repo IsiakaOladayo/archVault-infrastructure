@@ -57,18 +57,6 @@ module "storage" {
   common_tags = var.common_tags
 }
 
-  project_name = var.project_name
-  environment  = var.environment
-
-  primary_region = var.primary_region
-  replica_region = var.dr_region
-
-  documents_kms_key_primary_arn = module.kms.documents_kms_key_primary_arn
-  documents_kms_key_dr_arn      = module.kms.documents_kms_key_dr_arn
-
-  common_tags = var.common_tags
-}
-
 module "compute" {
   source = "../../modules/compute"
 
