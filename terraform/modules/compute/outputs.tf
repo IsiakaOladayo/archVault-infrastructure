@@ -18,16 +18,6 @@ output "ecs_task_definition_arn" {
   value       = aws_ecs_task_definition.application.arn
 }
 
-output "ecs_task_execution_role_arn" {
-  description = "ARN of the ECS task execution role"
-  value       = aws_iam_role.ecs_task_execution.arn
-}
-
-output "ecs_task_role_arn" {
-  description = "ARN of the ECS application task role"
-  value       = aws_iam_role.ecs_task.arn
-}
-
 output "alb_id" {
   description = "ID of the Application Load Balancer"
   value       = aws_lb.application.id

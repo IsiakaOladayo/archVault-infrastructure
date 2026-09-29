@@ -120,3 +120,13 @@ variable "waf_web_acl_arn" {
   description = "Regional WAF Web ACL ARN to associate with the ALB"
   type        = string
 }
+
+variable "ecs_execution_role_arn" {
+  description = "ARN of the ECS task execution role created by the security module"
+  type        = string
+}
+
+variable "ecs_task_role_arn" {
+  description = "ARN of the ECS application task role created by the security module"
+  type        = string
+}

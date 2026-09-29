@@ -1,6 +1,10 @@
 module "networking" {
   source = "../../modules/networking"
 
+  providers = {
+    aws.dr = aws.dr
+  }
+
   project_name = var.project_name
   environment  = var.environment
 
@@ -9,6 +13,12 @@ module "networking" {
   public_subnet_cidrs      = var.public_subnet_cidrs
   private_app_subnet_cidrs = var.private_app_subnet_cidrs
   private_db_subnet_cidrs  = var.private_db_subnet_cidrs
+
+  dr_vpc_cidr                 = var.dr_vpc_cidr
+  dr_availability_zones       = var.dr_availability_zones
+  dr_public_subnet_cidrs      = var.dr_public_subnet_cidrs
+  dr_private_app_subnet_cidrs = var.dr_private_app_subnet_cidrs
+  dr_private_db_subnet_cidrs  = var.dr_private_db_subnet_cidrs
 
   flow_log_kms_key_arn = module.kms.logs_kms_key_arn
 
@@ -28,7 +38,7 @@ module "security" {
   environment  = var.environment
 
   vpc_id    = module.networking.vpc_id
-  dr_vpc_id = module.networking.dr.vpc_id   # pending DR networking module
+  dr_vpc_id = module.networking.dr_vpc_id # pending DR networking module
 
   documents_kms_key_arn = module.kms.documents_kms_key_primary_arn
   secrets_kms_key_arn   = module.kms.secrets_kms_key_arn
@@ -52,22 +62,11 @@ module "storage" {
 
   documents_kms_key_primary_arn = module.kms.documents_kms_key_primary_arn
   documents_kms_key_dr_arn      = module.kms.documents_kms_key_dr_arn
-  logs_kms_key_arn              = module.kms.logs_kms_key_arn   # add this
+  logs_kms_key_arn              = module.kms.logs_kms_key_arn # add this
 
   common_tags = var.common_tags
 }
 
-  project_name = var.project_name
-  environment  = var.environment
-
-  primary_region = var.primary_region
-  replica_region = var.dr_region
-
-  documents_kms_key_primary_arn = module.kms.documents_kms_key_primary_arn
-  documents_kms_key_dr_arn      = module.kms.documents_kms_key_dr_arn
-
-  common_tags = var.common_tags
-}
 
 module "compute" {
   source = "../../modules/compute"
@@ -75,15 +74,15 @@ module "compute" {
   project_name = var.project_name
   environment  = var.environment
 
-  vpc_id                  = module.networking.vpc_id
-  public_subnet_ids       = module.networking.public_subnet_ids
-  private_app_subnet_ids  = module.networking.private_app_subnet_ids
+  vpc_id                 = module.networking.vpc_id
+  public_subnet_ids      = module.networking.public_subnet_ids
+  private_app_subnet_ids = module.networking.private_app_subnet_ids
 
   alb_security_group_id         = module.security.alb_security_group_id
   application_security_group_id = module.security.application_security_group_id
 
-  ecs_execution_role_arn = module.security.ecs_execution_role_arn   # add
-  ecs_task_role_arn      = module.security.ecs_task_role_arn         # add
+  ecs_execution_role_arn = module.security.ecs_execution_role_arn # add
+  ecs_task_role_arn      = module.security.ecs_task_role_arn      # add
 
   container_image = var.container_image
   container_port  = var.container_port
@@ -176,8 +175,8 @@ module "monitoring" {
 
   database_cluster_id = module.database.primary_cluster_id
 
-  rds_proxy_name             = module.database.rds_proxy_name
-  rds_proxy_max_connections  = var.rds_proxy_max_connections
+  rds_proxy_name            = module.database.rds_proxy_name
+  rds_proxy_max_connections = var.rds_proxy_max_connections
 
   elasticache_replication_group_id = module.cache.redis_replication_group_id
 

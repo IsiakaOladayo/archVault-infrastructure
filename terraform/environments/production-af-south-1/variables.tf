@@ -43,6 +43,36 @@ variable "private_db_subnet_cidrs" {
   type        = list(string)
 }
 
+variable "dr_vpc_cidr" {
+  description = "CIDR block for the DR VPC"
+  type        = string
+}
+
+variable "dr_availability_zones" {
+  description = "Availability Zones for the DR environment"
+  type        = list(string)
+
+  validation {
+    condition     = length(var.dr_availability_zones) >= 2
+    error_message = "The DR environment requires at least two Availability Zones."
+  }
+}
+
+variable "dr_public_subnet_cidrs" {
+  description = "CIDR blocks for DR public subnets"
+  type        = list(string)
+}
+
+variable "dr_private_app_subnet_cidrs" {
+  description = "CIDR blocks for DR private application subnets"
+  type        = list(string)
+}
+
+variable "dr_private_db_subnet_cidrs" {
+  description = "CIDR blocks for DR private database subnets"
+  type        = list(string)
+}
+
 variable "enable_nat_gateway" {
   description = "Whether to create NAT Gateways"
   type        = bool
@@ -112,4 +142,9 @@ variable "redis_multi_az_enabled" {
   description = "Enable Redis Multi-AZ."
   type        = bool
   default     = false
+}
+
+variable "certificate_arn" {
+  description = "ARN of the ACM certificate used by the application"
+  type        = string
 }
