@@ -67,7 +67,6 @@ module "storage" {
   common_tags = var.common_tags
 }
 
-
 module "compute" {
   source = "../../modules/compute"
 
